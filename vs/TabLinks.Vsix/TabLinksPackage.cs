@@ -57,7 +57,7 @@ namespace TabLinks.Vsix
             var bounds = wpf.TextViewLines.GetCharacterBounds(caret);
             var rect = new Rect(bounds.Left - wpf.ViewportLeft, bounds.Bottom - wpf.ViewportTop, 1, 1);
             if (wpf.Properties.TryGetProperty(typeof(LinkAdornment), out LinkAdornment adornment))
-                adornment.Pick(edges, wpf.VisualElement, PlacementMode.Relative, rect);
+                adornment.Pick(edges, rect);
         }
     }
 }

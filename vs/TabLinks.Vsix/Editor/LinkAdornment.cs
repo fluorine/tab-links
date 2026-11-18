@@ -94,7 +94,8 @@ namespace TabLinks.Vsix.Editor
                 var line = snapshot.GetLineFromLineNumber(group.Key);
                 if (line.Length == 0 || !_view.TextViewLines.ContainsBufferPosition(line.Start)) continue;
                 var viewLine = _view.TextViewLines.GetTextViewLineContainingBufferPosition(line.Start);
-                var edges = group.OrderBy(e => e.Rank).ToList();
+                var edges = group.OrderBy(e => e.Rank)
+                    .GroupBy(e => e.To.FilePath + "|" + e.To.Label).Select(g => g.First()).ToList();
                 var chip = MakeChip(edges, fg);
                 chip.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 var width = chip.DesiredSize.Width;
@@ -111,7 +112,7 @@ namespace TabLinks.Vsix.Editor
         {
             var icon = new System.Windows.Shapes.Path
             {
-                Data = Geometry.Parse("M0.5,14 H3 V5 Q3,3 5,3 H11 Q13,3 13,5 V14 H15.5"),
+                Data = Geometry.Parse("M3.5,12.5 L12.5,3.5 M5,3.5 H12.5 V11"),
                 Stroke = fg,
                 StrokeThickness = 1.4,
                 StrokeLineJoin = PenLineJoin.Round,
@@ -157,14 +158,16 @@ namespace TabLinks.Vsix.Editor
             chip.MouseLeftButtonUp += (s, e) =>
             {
                 e.Handled = true;
-                Pick(edges, chip, PlacementMode.Bottom, Rect.Empty);
+                var at = chip.TranslatePoint(new Point(0, chip.ActualHeight + 2), _view.VisualElement);
+                Pick(edges, new Rect(at, new Size(1, 1)));
             };
             return chip;
         }
 
-        public void Pick(System.Collections.Generic.IReadOnlyList<LinkEdge> edges, UIElement target,
-            PlacementMode placement, Rect rect)
+        /// <summary>The list opens at a fixed place in the view, so a redraw of the chip cannot move it.</summary>
+        public void Pick(System.Collections.Generic.IReadOnlyList<LinkEdge> all, Rect rect)
         {
+            var edges = all.GroupBy(e => e.To.FilePath + "|" + e.To.Label).Select(g => g.First()).ToList();
             ThreadHelper.ThrowIfNotOnUIThread();
             if (edges.Count == 0) return;
             if (edges.Count == 1) { LinkService.Jump(edges[0].To); return; }
@@ -174,8 +177,9 @@ namespace TabLinks.Vsix.Editor
             var panel = new StackPanel();
             var popup = new Popup
             {
-                PlacementTarget = target,
-                Placement = placement,
+                PlacementTarget = _view.VisualElement,
+                Placement = PlacementMode.Relative,
+                PlacementRectangle = rect,
                 StaysOpen = false,
                 Child = new Border
                 {
@@ -186,7 +190,6 @@ namespace TabLinks.Vsix.Editor
                     Child = panel,
                 },
             };
-            if (rect != Rect.Empty) popup.PlacementRectangle = rect;
             foreach (var edge in edges)
             {
                 var node = edge.To;
