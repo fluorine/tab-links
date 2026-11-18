@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+
+  <Commands package="guidTabLinksPackage">
+    <Groups>
+      <Group guid="guidTabLinksCmdSet" id="TabLinksGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="guidTabLinksCmdSet" id="JumpCommandId" priority="0x0100" type="Button">
+        <Parent guid="guidTabLinksCmdSet" id="TabLinksGroup"/>
+        <Strings>
+          <ButtonText>TabLinks: Jump to a linked tab</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidTabLinksCmdSet" id="ToggleCommandId" priority="0x0101" type="Button">
+        <Parent guid="guidTabLinksCmdSet" id="TabLinksGroup"/>
+        <Strings>
+          <ButtonText>TabLinks: Show links</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+  </Commands>
+
+  <KeyBindings>
+    <KeyBinding guid="guidTabLinksCmdSet" id="JumpCommandId" editor="guidVSStd97" key1="J" mod1="Control Alt"/>
+  </KeyBindings>
+
+  <Symbols>
+    <GuidSymbol name="guidTabLinksPackage" value="{a3d1c6f2-4e58-4b7a-9c20-1f6e8d3b5a70}" />
+    <GuidSymbol name="guidTabLinksCmdSet" value="{e72b9d14-6a35-4c8f-b0d1-5c93a8e2f467}">
+      <IDSymbol name="TabLinksGroup" value="0x1020" />
+      <IDSymbol name="JumpCommandId" value="0x0100" />
+      <IDSymbol name="ToggleCommandId" value="0x0101" />
+    </GuidSymbol>
+  </Symbols>
+
+</CommandTable>
