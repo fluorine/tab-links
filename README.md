@@ -24,13 +24,14 @@ A link needs both ends in open tabs. Close a tab and its links go away. If a but
 
 ## Visual Studio
 
-- Install it from the Visual Studio Marketplace, or download the `.vsix` from the [releases](https://github.com/fluorine/tab-links/releases).
+- Install [TabLinks from the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=fluorinestudios.tablinks), or download the `.vsix` from the [releases](https://github.com/fluorine/tab-links/releases).
 - `Ctrl+Alt+J` opens the list of links for the symbol at the caret.
 - Tools > Options > TabLinks > Links turns each kind of link on or off.
 - Tools > "TabLinks: Show links" turns all buttons on or off.
 
 ## Visual Studio Code
 
+- Install [TabLinks from the Marketplace](https://marketplace.visualstudio.com/items?itemName=fluorinestudios.tablinks-vscode).
 - Links show as CodeLens above symbols, and as a status bar item for the symbol at the cursor.
 - `Ctrl+Alt+J` opens the list of links.
 - Settings start with `tablinks.`.
