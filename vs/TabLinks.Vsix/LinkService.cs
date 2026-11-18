@@ -28,6 +28,7 @@ namespace TabLinks.Vsix
         public int Rank;
         public string Verb = "";
         public int AnchorLine = -1;
+        public LinkKind Kind;
 
         public string Describe(bool specific = true)
         {
@@ -184,12 +185,13 @@ namespace TabLinks.Vsix
             }
 
             var edges = new Dictionary<(LinkNode, LinkNode), LinkEdge>();
-            void Add(LinkNode from, LinkNode to, int rank, string verb)
+            void Add(LinkNode from, LinkNode to, int rank, string verb, LinkKind kind)
             {
                 if (from == to) return;
                 if (edges.TryGetValue((from, to), out var old) && old.Rank <= rank) return;
-                edges[(from, to)] = new LinkEdge { From = from, To = to, Rank = rank, Verb = verb, AnchorLine = from.NameLine };
+                edges[(from, to)] = new LinkEdge { From = from, To = to, Rank = rank, Verb = verb, AnchorLine = from.NameLine, Kind = kind };
             }
+            var settings = LinkSettings.Current;
             var uses = new List<LinkEdge>();
 
             foreach (var d in decls)
@@ -197,8 +199,8 @@ namespace TabLinks.Vsix
                 foreach (var (target, verb, reverse) in Bases(d.Symbol))
                 {
                     if (!bySymbol.TryGetValue(target.OriginalDefinition, out var t) || t.Path == d.Path) continue;
-                    Add(d.Node, t.Node, 0, "↑ " + verb);
-                    Add(t.Node, d.Node, 1, "↓ " + reverse);
+                    Add(d.Node, t.Node, 0, "↑ " + verb, LinkKind.Implements);
+                    Add(t.Node, d.Node, 1, "↓ " + reverse, LinkKind.ImplementedBy);
                 }
             }
 
@@ -206,6 +208,7 @@ namespace TabLinks.Vsix
             foreach (var d in decls)
             {
                 ct.ThrowIfCancellationRequested();
+                if (!settings.AnyUsage) break;
                 IEnumerable<Microsoft.CodeAnalysis.FindSymbols.ReferencedSymbol> refs;
                 try
                 {
@@ -226,11 +229,16 @@ namespace TabLinks.Vsix
                         .FirstOrDefault();
                     if (user == null) continue;
                     var line = loc.Location.GetLineSpan().StartLinePosition.Line;
-                    uses.Add(new LinkEdge { From = user.Node, To = d.Node, Rank = 2, AnchorLine = line });
-                    Add(d.Node, user.Node, 3, "");
+                    var isType = d.Symbol is INamedTypeSymbol;
+                    uses.Add(new LinkEdge
+                    {
+                        From = user.Node, To = d.Node, Rank = 2, AnchorLine = line,
+                        Kind = isType ? LinkKind.UsesType : LinkKind.UsesMember,
+                    });
+                    Add(d.Node, user.Node, 3, "", isType ? LinkKind.UsedByType : LinkKind.UsedByMember);
                 }
             }
-            return Collapse(edges.Values.Concat(uses));
+            return Collapse(edges.Values.Concat(uses).Where(e => settings.Allows(e.Kind)));
         }
 
         /// <summary>
@@ -244,7 +252,7 @@ namespace TabLinks.Vsix
             {
                 var best = g.OrderBy(e => e.To.StartLine).First();
                 if (best.Rank == 2)
-                    best = new LinkEdge { From = best.From, To = best.To, Rank = 2, AnchorLine = g.Min(e => e.AnchorLine) };
+                    best = new LinkEdge { From = best.From, To = best.To, Rank = 2, AnchorLine = g.Min(e => e.AnchorLine), Kind = best.Kind };
                 result.Add(best);
             }
             return result;
