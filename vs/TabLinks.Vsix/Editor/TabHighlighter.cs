@@ -27,7 +27,7 @@ namespace TabLinks.Vsix.Editor
                 var wanted = new HashSet<string>(fileNames, StringComparer.OrdinalIgnoreCase);
                 var glow = new DropShadowEffect
                 {
-                    Color = Color.FromRgb(0x4D, 0xA3, 0xFF), BlurRadius = 16, ShadowDepth = 0, Opacity = 1,
+                    Color = Color.FromRgb(0x4D, 0xA3, 0xFF), BlurRadius = 26, ShadowDepth = 0, Opacity = 1, RenderingBias = RenderingBias.Performance,
                 };
                 var stats = new Stats();
                 foreach (PresentationSource source in PresentationSource.CurrentSources)
@@ -44,6 +44,24 @@ namespace TabLinks.Vsix.Editor
         {
             foreach (var pair in Marked) pair.Key.Effect = pair.Value;
             Marked.Clear();
+            foreach (var (layer, outline) in Outlines) layer.Remove(outline);
+            Outlines.Clear();
+        }
+
+        private static readonly List<(System.Windows.Documents.AdornerLayer Layer, System.Windows.Documents.Adorner Outline)> Outlines
+            = new List<(System.Windows.Documents.AdornerLayer, System.Windows.Documents.Adorner)>();
+
+        private sealed class OutlineAdorner : System.Windows.Documents.Adorner
+        {
+            public OutlineAdorner(UIElement element) : base(element) { IsHitTestVisible = false; }
+
+            protected override void OnRender(DrawingContext dc)
+            {
+                var accent = Color.FromRgb(0x4D, 0xA3, 0xFF);
+                var rect = new Rect(new Point(1, 1), new Size(Math.Max(0, ActualWidth - 2), Math.Max(0, ActualHeight - 2)));
+                dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(0x38, accent.R, accent.G, accent.B)),
+                    new Pen(new SolidColorBrush(accent), 2), rect);
+            }
         }
 
         private sealed class Stats
@@ -68,6 +86,13 @@ namespace TabLinks.Vsix.Editor
                     {
                         Marked[tab] = tab.Effect;
                         tab.Effect = glow;
+                        var layer = System.Windows.Documents.AdornerLayer.GetAdornerLayer(tab);
+                        if (layer != null)
+                        {
+                            var outline = new OutlineAdorner(tab);
+                            layer.Add(outline);
+                            Outlines.Add((layer, outline));
+                        }
                     }
                     return;
                 }
