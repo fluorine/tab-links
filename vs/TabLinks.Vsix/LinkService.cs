@@ -29,8 +29,14 @@ namespace TabLinks.Vsix
         public string Verb = "";
         public int AnchorLine = -1;
 
-        public string Describe() =>
-            To.Label + "  ·  " + To.FileName;
+        public string Describe(bool specific = true)
+        {
+            if (specific) return To.Label + "  ·  " + To.FileName;
+            var parts = To.Label.Split('.');
+            if (!string.Equals(parts[0], Path.GetFileNameWithoutExtension(To.FilePath), StringComparison.OrdinalIgnoreCase))
+                return To.Label + "  ·  " + To.FileName;
+            return parts.Length > 1 ? "Go to tab  ·  " + parts[1] : "Go to tab";
+        }
     }
 
     /// <summary>Finds links between symbols that are declared in open documents.</summary>

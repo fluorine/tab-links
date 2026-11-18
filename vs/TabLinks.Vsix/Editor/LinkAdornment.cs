@@ -129,7 +129,7 @@ namespace TabLinks.Vsix.Editor
         private FrameworkElement MakeChip(System.Collections.Generic.List<LinkEdge> edges, Brush fg)
         {
             var first = edges[0];
-            var text = first.Describe();
+            var text = first.Describe(edges.Count > 1);
             if (edges.Count > 1) text += "  +" + (edges.Count - 1);
             var color = (fg as SolidColorBrush)?.Color ?? Colors.Gray;
             var chip = new Border
