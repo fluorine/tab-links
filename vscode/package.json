@@ -108,6 +108,11 @@
           "type": "boolean",
           "default": true,
           "description": "On a method or property, show buttons back to the tabs that use it."
+        },
+        "tablinks.clickToJump": {
+          "type": "boolean",
+          "default": true,
+          "description": "Clicking at the end of a line that has an arrow button goes to the target tab. If the button has several targets, a list opens. Turn off to use the hover popup only."
         }
       }
     }

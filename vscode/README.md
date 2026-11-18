@@ -16,7 +16,7 @@ A link needs both ends in open tabs. Close a tab and its links go away.
 
 ## Use it
 
-- Hover over the arrow button, then click a target.
+- Click the arrow button. One target: you go there. Several targets: a list opens. You can also hover and click a target in the popup.
 - A status bar item `$(link-external) N` shows when the symbol at the cursor has links. Click it for the list.
 - `Ctrl+Alt+J` opens the list for the symbol at the cursor.
 
@@ -25,6 +25,7 @@ A link needs both ends in open tabs. Close a tab and its links go away.
 | Setting | Default | Use |
 |---|---|---|
 | `tablinks.enabled` | true | Turn all buttons on or off. |
+| `tablinks.clickToJump` | true | A click at the end of a line with a button jumps. Turn off if it gets in your way. |
 | `tablinks.links.implements` | true | Implementation to interface. |
 | `tablinks.links.implementedBy` | true | Interface to implementations. |
 | `tablinks.links.usesTypes` | true | Use of an object (type). |

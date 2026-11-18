@@ -25,6 +25,7 @@ export function activate(context: vscode.ExtensionContext): void {
     after: {
       color: new vscode.ThemeColor('textLink.foreground'),
       border: '1px solid rgba(128,128,128,0.45)',
+      textDecoration: 'none; cursor: pointer',
       margin: '0 0 0 12px',
     },
   });
@@ -150,7 +151,18 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.tabGroups.onDidChangeTabs(() => schedule(800)),
     vscode.workspace.onDidChangeTextDocument(ev => { if (ev.contentChanges.length) schedule(2500); }),
     vscode.workspace.onDidSaveTextDocument(() => schedule(500)),
-    vscode.window.onDidChangeTextEditorSelection(updateStatus),
+    // A click on the arrow puts the caret at the end of the line. Treat that as a click on the button.
+    vscode.window.onDidChangeTextEditorSelection(ev => {
+      updateStatus();
+      if (!cfg().get('clickToJump', true) || ev.kind !== vscode.TextEditorSelectionChangeKind.Mouse) return;
+      const sel = ev.selections[0];
+      if (ev.selections.length !== 1 || !sel.isEmpty) return;
+      const doc = ev.textEditor.document;
+      const line = sel.active.line;
+      if (sel.active.character !== doc.lineAt(line).text.length) return;
+      const here = edges.filter(e => e.from.uri.toString() === doc.uri.toString() && e.anchorLine === line);
+      if (here.length) void pick(here);
+    }),
     vscode.window.onDidChangeActiveTextEditor(() => { renderAll(); updateStatus(); }),
     vscode.window.onDidChangeVisibleTextEditors(renderAll),
     vscode.workspace.onDidChangeConfiguration(ev => { if (ev.affectsConfiguration('tablinks')) schedule(100); }),
