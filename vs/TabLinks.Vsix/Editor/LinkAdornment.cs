@@ -144,8 +144,16 @@ namespace TabLinks.Vsix.Editor
                 Child = Content(edges.Count, fg),
                 ToolTip = string.Join("\n", edges.Select(e => e.Describe())),
             };
-            chip.MouseEnter += (s, e) => chip.Opacity = 1;
-            chip.MouseLeave += (s, e) => chip.Opacity = 0.65;
+            chip.MouseEnter += (s, e) =>
+            {
+                chip.Opacity = 1;
+                TabHighlighter.Show(edges.Select(x => x.To.FileName));
+            };
+            chip.MouseLeave += (s, e) =>
+            {
+                chip.Opacity = 0.65;
+                TabHighlighter.Clear();
+            };
             chip.MouseLeftButtonUp += (s, e) =>
             {
                 e.Handled = true;
@@ -190,9 +198,9 @@ namespace TabLinks.Vsix.Editor
                     Padding = new Thickness(8, 3, 8, 3),
                     Cursor = Cursors.Hand,
                 };
-                row.MouseEnter += (s, e) => row.Background = hover;
-                row.MouseLeave += (s, e) => row.Background = Brushes.Transparent;
-                row.MouseLeftButtonUp += (s, e) => { popup.IsOpen = false; LinkService.Jump(node); };
+                row.MouseEnter += (s, e) => { row.Background = hover; TabHighlighter.Show(new[] { node.FileName }); };
+                row.MouseLeave += (s, e) => { row.Background = Brushes.Transparent; TabHighlighter.Clear(); };
+                row.MouseLeftButtonUp += (s, e) => { popup.IsOpen = false; TabHighlighter.Clear(); LinkService.Jump(node); };
                 panel.Children.Add(row);
             }
             popup.IsOpen = true;
