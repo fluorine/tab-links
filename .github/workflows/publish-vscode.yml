@@ -1,0 +1,59 @@
+name: publish-vscode
+
+# Push a tag such as vscode-v0.1.1 to publish. The tag must match the version
+# in vscode/package.json.
+on:
+  push:
+    tags: [ 'vscode-v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+
+      - run: npm ci
+
+      - name: Check that the tag matches the package version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          tag="${GITHUB_REF_NAME#vscode-v}"
+          if [ "$version" != "$tag" ]; then echo "Tag $tag does not match package version $version."; exit 1; fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npx vsce package --no-dependencies
+
+      - name: Create or update the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          file="tablinks-vscode-${VERSION}.vsix"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$file" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$file" --title "TabLinks for VS Code $VERSION" --generate-notes
+          fi
+
+      - name: Publish to the Visual Studio Marketplace
+        env:
+          VS_MARKETPLACE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
+        run: |
+          if [ -z "$VS_MARKETPLACE_PAT" ]; then
+            echo "::warning::Secret VS_MARKETPLACE_PAT is not set. The Marketplace upload was skipped."
+            exit 0
+          fi
+          npx vsce publish --packagePath "tablinks-vscode-${VERSION}.vsix" --pat "$VS_MARKETPLACE_PAT"

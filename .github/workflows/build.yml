@@ -1,0 +1,35 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  vs:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - run: msbuild vs/TabLinks.Vsix/TabLinks.Vsix.csproj /restore /p:Configuration=Release /v:m
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TabLinks.vsix
+          path: vs/TabLinks.Vsix/bin/Release/net48/TabLinks.Vsix.vsix
+
+  vscode:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vscode
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: vscode/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npx vsce package --no-dependencies

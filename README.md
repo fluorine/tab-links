@@ -1,40 +1,57 @@
 # TabLinks
 
-TabLinks shows how your open tabs connect. Open an interface in one tab and its implementation in another. Each symbol then gets a link above it. Click the link to go to the other tab and to the exact line.
+<p align="center"><img src="assets/icon.png" width="96" alt="TabLinks icon"></p>
 
-It works for any language that has a VS Code language server with "go to implementation" and "find references".
+TabLinks shows how your open tabs connect. Open an interface in one tab and its implementation in another. A small arrow button appears in the code. Click it to go to the other tab and to the exact line.
 
-## What you see
+Hover over the button. The target tab lights up in the tab bar, so you see where you will go.
 
-- `↑ implements IUserService.Get (IUserService.cs)` above an implementation.
-- `↓ implemented in UserService.Get (UserService.cs)` above an interface member.
-- `← used in` and `→ uses` for calls between open tabs. Turn these off with `tablinks.showUsages`.
-- A status bar item `$(link) N` when the symbol at the cursor has links. Click it to see the list.
-- `Ctrl+Alt+J` opens the list for the symbol at the cursor.
+There are two extensions:
 
-A link needs both ends in open tabs. Close a tab and its links go away.
-
-## Settings
-
-| Setting | Default | Use |
+| Editor | Folder | Languages |
 |---|---|---|
-| `tablinks.enabled` | true | Turn all links on or off. |
-| `tablinks.showUsages` | true | Also link callers and callees. |
-| `tablinks.maxOpenDocs` | 10 | Most tabs to analyze. |
-| `tablinks.maxSymbolsPerDoc` | 200 | Most symbols to analyze in a tab. |
-| `tablinks.maxLensPerSymbol` | 3 | Links above one symbol. |
+| Visual Studio 2022 and later | [`vs/`](vs/) | C# (uses Roslyn) |
+| Visual Studio Code | [`vscode/`](vscode/) | Any language with a language server |
+
+## What links it finds
+
+- **Implementation to interface.** On a class or member, a button goes to the interface, base class or overridden member.
+- **Interface to implementations.** On an interface member, a button goes to each implementation.
+- **Use of an object or member.** At a line that uses a type or calls a member from another tab, a button goes to its declaration.
+- **Back links.** On the declaration, a button goes back to the tabs that use it.
+
+A link needs both ends in open tabs. Close a tab and its links go away. If a button has more than one target, it shows a number and a click opens a list.
+
+## Visual Studio
+
+- Install it from the Visual Studio Marketplace, or download the `.vsix` from the [releases](https://github.com/fluorine/tab-links/releases).
+- `Ctrl+Alt+J` opens the list of links for the symbol at the caret.
+- Tools > Options > TabLinks > Links turns each kind of link on or off.
+- Tools > "TabLinks: Show links" turns all buttons on or off.
+
+## Visual Studio Code
+
+- Links show as CodeLens above symbols, and as a status bar item for the symbol at the cursor.
+- `Ctrl+Alt+J` opens the list of links.
+- Settings start with `tablinks.`.
 
 ## Privacy
 
-TabLinks uses only the language servers on your machine. It sends nothing over the network.
+TabLinks works on your machine only. It sends nothing over the network.
 
-## Visual Studio version
+## Build
 
-The `vs/` folder holds a Visual Studio extension for C#. It uses Roslyn, so it knows real interface, base class and usage links.
+```powershell
+msbuild vs\TabLinks.Vsix\TabLinks.Vsix.csproj /restore /p:Configuration=Release
+cd vscode; npm ci; npm run build; npx vsce package --no-dependencies
+```
 
-- A small chip at the right edge of the line shows the link, such as `↑ implements IUserService.Get (IUserService.cs)`. Click it to go to that tab and line.
-- If a symbol has more than one link, the chip shows `+N`. Click it to see the list.
-- `Ctrl+Alt+J` opens the list for the symbol at the caret.
-- Tools > "TabLinks: Show links" turns the chips on and off.
+To publish, push a tag. `v0.1.1` publishes the Visual Studio extension. `vscode-v0.1.1` publishes the VS Code extension. The tag must match the version in the manifest. The secret `VS_MARKETPLACE_PAT` must exist in the repository.
 
-Build: `MSBuild.exe vs\TabLinks.Vsix\TabLinks.Vsix.csproj /restore /p:Configuration=Release`
+## Related
+
+[CodeGlyph](https://github.com/fluorine/code-glyph) draws a subtle icon behind each class and method. It is a separate project.
+
+## License
+
+MIT

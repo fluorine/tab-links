@@ -15,7 +15,7 @@ using Task = System.Threading.Tasks.Task;
 namespace TabLinks.Vsix
 {
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-    [InstalledProductRegistration("TabLinks", "Links between open C# tabs", "0.0.1")]
+    [InstalledProductRegistration("TabLinks", "Links between open C# tabs", "0.1.0")]
     [ProvideOptionPage(typeof(LinkOptionsPage), "TabLinks", "Links", 0, 0, true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [Guid(PackageGuidString)]
