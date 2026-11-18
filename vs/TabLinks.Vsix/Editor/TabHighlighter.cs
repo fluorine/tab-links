@@ -27,7 +27,7 @@ namespace TabLinks.Vsix.Editor
                 var wanted = new HashSet<string>(fileNames, StringComparer.OrdinalIgnoreCase);
                 var glow = new DropShadowEffect
                 {
-                    Color = Color.FromRgb(0x4D, 0xA3, 0xFF), BlurRadius = 26, ShadowDepth = 0, Opacity = 1, RenderingBias = RenderingBias.Performance,
+                    Color = Color.FromRgb(0xFF, 0xA5, 0x2E), BlurRadius = 14, ShadowDepth = 0, Opacity = 0.9,
                 };
                 var stats = new Stats();
                 foreach (PresentationSource source in PresentationSource.CurrentSources)
@@ -57,10 +57,10 @@ namespace TabLinks.Vsix.Editor
 
             protected override void OnRender(DrawingContext dc)
             {
-                var accent = Color.FromRgb(0x4D, 0xA3, 0xFF);
+                var accent = Color.FromRgb(0xFF, 0xA5, 0x2E);
                 var rect = new Rect(new Point(1, 1), new Size(Math.Max(0, ActualWidth - 2), Math.Max(0, ActualHeight - 2)));
-                dc.DrawRectangle(new SolidColorBrush(Color.FromArgb(0x38, accent.R, accent.G, accent.B)),
-                    new Pen(new SolidColorBrush(accent), 2), rect);
+                dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0x30, accent.R, accent.G, accent.B)),
+                    new Pen(new SolidColorBrush(accent), 1.5), 4, 4, rect);
             }
         }
 
@@ -105,18 +105,20 @@ namespace TabLinks.Vsix.Editor
 
         private static UIElement? TabAncestor(DependencyObject start)
         {
+            // The tab is the largest ancestor that is still about the size of one tab header.
             DependencyObject? current = start;
-            UIElement? firstElement = null;
-            for (var i = 0; i < 8 && current != null; i++)
+            FrameworkElement? best = null;
+            var chain = new List<string>();
+            for (var i = 0; i < 14 && current != null; i++)
             {
                 current = VisualTreeHelper.GetParent(current);
-                if (current is UIElement element)
-                {
-                    firstElement ??= element;
-                    if (current.GetType().Name.IndexOf("Tab", StringComparison.OrdinalIgnoreCase) >= 0) return element;
-                }
+                if (!(current is FrameworkElement fe)) continue;
+                chain.Add(fe.GetType().Name + " " + (int)fe.ActualWidth + "x" + (int)fe.ActualHeight);
+                if (fe.ActualWidth > 420 || fe.ActualHeight > 48) break;
+                best = fe;
             }
-            return firstElement;
+            Log("tab chain: " + string.Join(" > ", chain) + " => " + (best?.GetType().Name ?? "none"));
+            return best;
         }
 
         private static void Log(string line)
