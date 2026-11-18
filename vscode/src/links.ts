@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export type EdgeKind = 'implements' | 'implementedBy' | 'uses' | 'usedBy';
+export type LinkKind = 'implements' | 'implementedBy' | 'usesType' | 'usesMember' | 'usedByType' | 'usedByMember';
 
 export interface Sym {
   uri: vscode.Uri;
@@ -14,11 +14,13 @@ export interface Sym {
 export interface Edge {
   from: Sym;
   to: Sym;
-  kind: EdgeKind;
+  kind: LinkKind;
+  rank: number;
+  anchorLine: number;
 }
 
 export interface LinkOptions {
-  showUsages: boolean;
+  allow: Record<LinkKind, boolean>;
   maxDocs: number;
   maxSymbols: number;
 }
@@ -28,11 +30,13 @@ const WANTED = new Set<vscode.SymbolKind>([
   vscode.SymbolKind.Method, vscode.SymbolKind.Function, vscode.SymbolKind.Constructor, vscode.SymbolKind.Property,
 ]);
 
-const REVERSE: Record<EdgeKind, EdgeKind> = {
-  implements: 'implementedBy', implementedBy: 'implements', uses: 'usedBy', usedBy: 'uses',
-};
+const TYPES = new Set<vscode.SymbolKind>([
+  vscode.SymbolKind.Class, vscode.SymbolKind.Interface, vscode.SymbolKind.Struct, vscode.SymbolKind.Enum,
+]);
 
-export const ORDER: EdgeKind[] = ['implements', 'implementedBy', 'uses', 'usedBy'];
+const RANK: Record<LinkKind, number> = {
+  implements: 0, implementedBy: 1, usesType: 2, usesMember: 2, usedByType: 3, usedByMember: 3,
+};
 
 export function openTextTabs(): Map<string, { uri: vscode.Uri; column: vscode.ViewColumn }> {
   const tabs = new Map<string, { uri: vscode.Uri; column: vscode.ViewColumn }>();
@@ -51,6 +55,8 @@ export function symbolLabel(s: Sym): string {
 export function fileName(uri: vscode.Uri): string {
   return uri.path.split('/').pop() ?? uri.path;
 }
+
+const symKey = (s: Sym) => `${s.uri.toString()}|${s.sel.start.line}|${s.sel.start.character}`;
 
 export async function readSymbols(doc: vscode.TextDocument, max: number): Promise<Sym[]> {
   const raw = await vscode.commands.executeCommand<(vscode.DocumentSymbol | vscode.SymbolInformation)[]>(
@@ -96,6 +102,35 @@ async function locations(command: string, s: Sym): Promise<vscode.Location[]> {
   }
 }
 
+const edge = (from: Sym, to: Sym, kind: LinkKind, anchorLine: number): Edge => ({ from, to, kind, rank: RANK[kind], anchorLine });
+
+/**
+ * A symbol that uses a file many times gets one link for that file, at its first use.
+ * The link goes to the first declaration in the file. A pair with an implementation link needs no usage link.
+ */
+export function collapse(all: Edge[], allow: Record<LinkKind, boolean>): Edge[] {
+  const pairs = new Map<string, Edge>();
+  const groups = new Map<string, Edge[]>();
+  for (const e of all.filter(x => allow[x.kind])) {
+    if (e.rank === 2 || e.rank === 3) {
+      const key = `${symKey(e.from)}|${e.rank}|${e.to.uri.toString()}`;
+      groups.set(key, [...(groups.get(key) ?? []), e]);
+    } else {
+      const key = `${symKey(e.from)}|${symKey(e.to)}`;
+      const old = pairs.get(key);
+      if (!old || old.rank > e.rank) pairs.set(key, e);
+    }
+  }
+  const result = [...pairs.values()];
+  for (const list of groups.values()) {
+    const best = [...list].sort((a, b) => a.to.range.start.line - b.to.range.start.line)[0];
+    if (pairs.has(`${symKey(best.from)}|${symKey(best.to)}`)) continue;
+    const anchor = best.rank === 2 ? Math.min(...list.map(x => x.anchorLine)) : best.anchorLine;
+    result.push({ ...best, anchorLine: anchor });
+  }
+  return result;
+}
+
 /** Finds links between symbols of the open tabs. Both ends of a link must be in an open tab. */
 export async function buildEdges(opts: LinkOptions, isCurrent: () => boolean): Promise<Edge[]> {
   const tabs = [...openTextTabs().values()].slice(0, opts.maxDocs);
@@ -112,18 +147,12 @@ export async function buildEdges(opts: LinkOptions, isCurrent: () => boolean): P
     if (!isCurrent()) return [];
   }
 
-  const edges = new Map<string, Edge>();
-  const add = (from: Sym, to: Sym, kind: EdgeKind) => {
-    const key = [from.uri, from.sel.start.line, to.uri, to.sel.start.line].map(String).join('|');
-    const existing = edges.get(key);
-    if (existing && ORDER.indexOf(existing.kind) <= ORDER.indexOf(kind)) return;
-    edges.set(key, { from, to, kind });
-    const rkey = [to.uri, to.sel.start.line, from.uri, from.sel.start.line].map(String).join('|');
-    const rev = edges.get(rkey);
-    if (!rev || ORDER.indexOf(rev.kind) > ORDER.indexOf(REVERSE[kind])) edges.set(rkey, { from: to, to: from, kind: REVERSE[kind] });
-  };
-
+  const a = opts.allow;
+  const wantBase = a.implements || a.implementedBy;
+  const wantUsage = a.usesType || a.usesMember || a.usedByType || a.usedByMember;
+  const raw: Edge[] = [];
   const all = [...bySym.values()].flat();
+
   for (let i = 0; i < all.length; i += 8) {
     await Promise.all(all.slice(i, i + 8).map(async s => {
       const here = s.uri.toString();
@@ -131,17 +160,25 @@ export async function buildEdges(opts: LinkOptions, isCurrent: () => boolean): P
         const key = l.uri.toString();
         return key !== here && bySym.has(key) ? innermost(bySym.get(key)!, l.range.start) : undefined;
       };
-      for (const l of await locations('vscode.executeImplementationProvider', s)) {
-        const t = resolve(l);
-        if (t) add(s, t, 'implementedBy');
+      if (wantBase) {
+        for (const l of await locations('vscode.executeImplementationProvider', s)) {
+          const t = resolve(l);
+          if (!t) continue;
+          raw.push(edge(s, t, 'implementedBy', s.sel.start.line));
+          raw.push(edge(t, s, 'implements', t.sel.start.line));
+        }
       }
-      if (!opts.showUsages) return;
-      for (const l of await locations('vscode.executeReferenceProvider', s)) {
-        const t = resolve(l);
-        if (t) add(s, t, 'usedBy');
+      if (wantUsage) {
+        const isType = TYPES.has(s.kind);
+        for (const l of await locations('vscode.executeReferenceProvider', s)) {
+          const t = resolve(l);
+          if (!t) continue;
+          raw.push(edge(t, s, isType ? 'usesType' : 'usesMember', l.range.start.line));
+          raw.push(edge(s, t, isType ? 'usedByType' : 'usedByMember', s.sel.start.line));
+        }
       }
     }));
     if (!isCurrent()) return [];
   }
-  return [...edges.values()];
+  return collapse(raw, a);
 }

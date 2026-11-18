@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="TabLinks.9b4e2c71-3d58-4a96-8f10-c7a5e3d6b284" Version="0.1.0" Language="en-US" Publisher="Joseph the Developer" />
+    <Identity Id="TabLinks.9b4e2c71-3d58-4a96-8f10-c7a5e3d6b284" Version="0.2.0" Language="en-US" Publisher="Joseph the Developer" />
     <DisplayName>TabLinks</DisplayName>
     <Description xml:space="preserve">Shows links between your open C# tabs, such as interface to implementation. Click a link to go to the other tab and the exact line.</Description>
     <MoreInfo>https://github.com/fluorine/tab-links</MoreInfo>

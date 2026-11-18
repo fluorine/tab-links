@@ -1,8 +1,8 @@
 {
   "name": "tablinks-vscode",
   "displayName": "TabLinks",
-  "description": "Shows links between your open tabs, such as interface to implementation, and jumps to the exact place.",
-  "version": "0.1.1",
+  "description": "Shows links between your open tabs, such as interface to implementation. Click an arrow button to go to the other tab and the exact line.",
+  "version": "0.2.0",
   "publisher": "fluorinestudios",
   "icon": "media/icon.png",
   "repository": {
@@ -67,11 +67,6 @@
           "default": true,
           "description": "Show links between open tabs."
         },
-        "tablinks.showUsages": {
-          "type": "boolean",
-          "default": true,
-          "description": "Also link a symbol to the symbols in other open tabs that use it. If off, only interface and implementation links show."
-        },
         "tablinks.maxOpenDocs": {
           "type": "integer",
           "default": 10,
@@ -84,12 +79,35 @@
           "minimum": 10,
           "description": "Largest number of symbols to analyze in one tab."
         },
-        "tablinks.maxLensPerSymbol": {
-          "type": "integer",
-          "default": 3,
-          "minimum": 1,
-          "maximum": 10,
-          "description": "Links shown above one symbol. The rest open in a list."
+        "tablinks.links.implements": {
+          "type": "boolean",
+          "default": true,
+          "description": "On a class or member, show a button to the interface, base class or overridden member."
+        },
+        "tablinks.links.implementedBy": {
+          "type": "boolean",
+          "default": true,
+          "description": "On an interface or base member, show buttons to the types and members that implement or override it."
+        },
+        "tablinks.links.usesTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "At a place that uses a type (for example new Foo()), show a button to the tab of that type."
+        },
+        "tablinks.links.usesMembers": {
+          "type": "boolean",
+          "default": true,
+          "description": "At a place that calls a member of another tab, show a button to its declaration."
+        },
+        "tablinks.links.usedByTypes": {
+          "type": "boolean",
+          "default": true,
+          "description": "On a type declaration, show buttons back to the tabs that use it."
+        },
+        "tablinks.links.usedByMembers": {
+          "type": "boolean",
+          "default": true,
+          "description": "On a method or property, show buttons back to the tabs that use it."
         }
       }
     }
