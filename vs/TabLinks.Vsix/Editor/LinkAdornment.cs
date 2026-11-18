@@ -107,41 +107,41 @@ namespace TabLinks.Vsix.Editor
             }
         }
 
-        private static UIElement Content(string text, Brush fg)
+        private static UIElement Content(int count, Brush fg)
         {
             var icon = new System.Windows.Shapes.Path
             {
-                Data = Geometry.Parse("M1,14 V4 H5 V2 H9 V4 H15 V14 Z"),
+                Data = Geometry.Parse("M0.5,14 H3 V5 Q3,3 5,3 H11 Q13,3 13,5 V14 H15.5"),
                 Stroke = fg,
-                StrokeThickness = 1.3,
+                StrokeThickness = 1.4,
                 StrokeLineJoin = PenLineJoin.Round,
-                Width = 12,
-                Height = 12,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+                Width = 14,
+                Height = 14,
                 Stretch = Stretch.Uniform,
-                Margin = new Thickness(0, 1, 5, 0),
+                Margin = new Thickness(0, 1, 0, 0),
             };
             var panel = new StackPanel { Orientation = Orientation.Horizontal };
             panel.Children.Add(icon);
-            panel.Children.Add(new TextBlock { Text = text, Foreground = fg, FontSize = 11 });
+            if (count > 1)
+                panel.Children.Add(new TextBlock { Text = count.ToString(), Foreground = fg, FontSize = 10, Margin = new Thickness(3, 0, 0, 0) });
             return panel;
         }
 
         private FrameworkElement MakeChip(System.Collections.Generic.List<LinkEdge> edges, Brush fg)
         {
-            var first = edges[0];
-            var text = first.Describe(edges.Count > 1);
-            if (edges.Count > 1) text += "  +" + (edges.Count - 1);
             var color = (fg as SolidColorBrush)?.Color ?? Colors.Gray;
             var chip = new Border
             {
                 Background = new SolidColorBrush(Color.FromArgb(0x26, color.R, color.G, color.B)),
                 BorderBrush = new SolidColorBrush(Color.FromArgb(0x59, color.R, color.G, color.B)),
                 BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(8),
-                Padding = new Thickness(7, 0, 7, 1),
+                CornerRadius = new CornerRadius(5),
+                Padding = new Thickness(4, 0, 4, 1),
                 Opacity = 0.65,
                 Cursor = Cursors.Hand,
-                Child = Content(text, fg),
+                Child = Content(edges.Count, fg),
                 ToolTip = string.Join("\n", edges.Select(e => e.Describe())),
             };
             chip.MouseEnter += (s, e) => chip.Opacity = 1;
