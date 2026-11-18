@@ -60,7 +60,7 @@ namespace TabLinks.Vsix.Editor
                 var accent = Color.FromRgb(0xFF, 0xA5, 0x2E);
                 var rect = new Rect(new Point(1, 1), new Size(Math.Max(0, ActualWidth - 2), Math.Max(0, ActualHeight - 2)));
                 dc.DrawRoundedRectangle(new SolidColorBrush(Color.FromArgb(0x30, accent.R, accent.G, accent.B)),
-                    new Pen(new SolidColorBrush(accent), 1.5), 4, 4, rect);
+                    new Pen(new SolidColorBrush(accent), 1.5), rect, 4, 4);
             }
         }
 
@@ -79,7 +79,7 @@ namespace TabLinks.Vsix.Editor
                 var text = Normalize(tb.Text);
                 if (text.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) && stats.Sample.Count < 12)
                     stats.Sample.Add(text + (tb.IsVisible ? "" : "(hidden)"));
-                if (tb.IsVisible && wanted.Contains(text))
+                if (tb.IsVisible && Matches(wanted, text))
                 {
                     var tab = TabAncestor(tb);
                     if (tab != null && !Marked.ContainsKey(tab))
@@ -99,6 +99,16 @@ namespace TabLinks.Vsix.Editor
             }
             var count = node is Visual || node is System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetChildrenCount(node) : 0;
             for (var i = 0; i < count; i++) Walk(VisualTreeHelper.GetChild(node, i), wanted, glow, depth + 1, stats);
+        }
+
+        private static bool Matches(HashSet<string> wanted, string text)
+        {
+            if (wanted.Contains(text)) return true;
+            var cut = text.IndexOf((char)0x2026);
+            if (cut < 0) return false;
+            var head = text.Substring(0, cut);
+            var tail = text.Substring(cut + 1);
+            return wanted.Any(w => w.StartsWith(head, StringComparison.OrdinalIgnoreCase) && w.EndsWith(tail, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string Normalize(string? text) => (text ?? "").Trim().TrimEnd('*', ' ');
