@@ -2,7 +2,7 @@
   "name": "tablinks-vscode",
   "displayName": "TabLinks",
   "description": "Shows links between your open tabs, such as interface to implementation. Click an arrow button to go to the other tab and the exact line.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "fluorinestudios",
   "icon": "media/icon.png",
   "repository": {
